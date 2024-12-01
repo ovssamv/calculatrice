@@ -1,0 +1,383 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Advanced Calculator V3</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.7.1/chart.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjs/11.8.0/math.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Roboto:wght@300;400;700&display=swap');
+        
+        body, html {
+            height: 100%;
+            margin: 0;
+            font-family: 'Roboto', sans-serif;
+            background: linear-gradient(135deg, #1a202c, #2d3748);
+            color: #e2e8f0;
+        }
+
+        .calculator-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100%;
+            padding: 150px;
+            box-sizing: border-box;
+        }
+
+        .calculator-wrapper {
+            display: flex;
+            flex-direction: row;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.3);
+            overflow: hidden;
+            max-width: 1200px;  /* Increased max-width for side-by-side layout */
+            width: 95%;
+            backdrop-filter: blur(10px);
+            border: 2px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .calculator {
+            flex: 1;
+            padding: 20px;
+            max-width: 500px;  /* Adjusted max-width for calculator */
+            box-sizing: border-box;
+        }
+
+        #display, #historyDisplay {
+            font-family: 'Orbitron', sans-serif;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 15px;
+            padding: 15px;
+            margin-bottom: 15px;
+            text-align: right;
+            font-size: 28px;
+            min-height: 50px;
+            overflow: hidden;
+            overflow-x: auto;
+            box-shadow: inset 0 2px 5px rgba(255,255,255,0.1);
+            color: #48bb78;
+            text-shadow: 0 0 10px rgba(72, 187, 120, 0.5);
+        }
+
+        #historyDisplay {
+            font-size: 16px;
+            min-height: 70px;
+            max-height: 90px;
+            overflow-y: auto;
+            overflow-x: auto;
+            color: #a0aec0;
+        }
+
+        .buttons {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 10px;
+        }
+
+        button {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 18px;
+            padding: 10px 0;
+            border: none;
+            border-radius: 30%;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: bold;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+
+        button:hover {
+            transform: translateY(-3px) scale(1.05);
+            box-shadow: 0 8px 20px rgba(0,0,0,0.3);
+        }
+
+        button:active {
+            transform: translateY(1px) scale(0.98);
+        }
+
+        .number { background: linear-gradient(135deg, #4a5568, #2d3748); color: #e2e8f0; }
+        .operator { background: linear-gradient(135deg, #ed8936, #dd6b20); color: white; }
+        .function { background: linear-gradient(135deg, #4299e1, #3182ce); color: white; }
+        .equal { background: linear-gradient(135deg, #48bb78, #38a169); color: white; }
+        .clear, .delete { background: #e53e3e ; color: white; }
+
+        .graph-container {
+            flex: 1;
+            padding: 30px;
+            background: rgba(255, 255, 255, 0.05);
+            display: flex;
+            flex-direction: column;
+            min-width: 400px;  /* Ensure minimum width for graph container */
+        }
+
+        #graphContainer {
+            flex-grow: 1;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            padding: 15px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+        }
+
+        #coefficients {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 15px;
+        }
+
+        #coefficients input {
+            width: 60px;
+            padding: 7px;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            background: rgba(255, 255, 255, 0.1);
+            color: #e2e8f0;
+            text-align: center;
+            font-family: 'Orbitron', sans-serif;
+        }
+
+        #coefficients input::placeholder {
+            color: #a0aec0;
+        }
+
+        @media (max-width: 1200px) {
+            .calculator-wrapper {
+                flex-direction: column;
+                align-items: center;
+            }
+        .calculator-container {
+
+            padding: 5px;
+            
+        }
+
+
+            .calculator, .graph-container {
+                max-width: 100%;
+                width: 100%;
+            }
+        }
+
+        @media (max-width: 600px) {
+            .buttons {
+                grid-template-columns: repeat(4, 1fr);
+            }
+          #coefficients {
+            padding: 20px;
+        }
+        }
+
+        @media (max-width: 400px) {
+            .calculator {
+                padding: 10px;
+            }
+
+            button {
+                font-size: 16px;
+                padding: 10px 0;
+            }
+
+            #display, #historyDisplay {
+                font-size: 24px;
+                padding: 10px;
+            }
+
+            #historyDisplay {
+                font-size: 14px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="calculator-container">
+        <div class="calculator-wrapper">
+            <div class="calculator">
+                <div id="historyDisplay"></div>
+                <div id="display">0</div>
+                <div class="buttons">
+                    <button class="clear" aria-label="Clear" onclick="clearAll()">C</button>
+                    <button class="delete" aria-label="Delete Last Character" onclick="deleteLastChar()">DEL</button>
+                    <button class="function" aria-label="Open Parenthesis" onclick="appendToDisplay('(')">(</button>
+                    <button class="function" aria-label="Close Parenthesis" onclick="appendToDisplay(')')">)</button>
+                    <button class="function" aria-label="Pi" onclick="appendToDisplay('pi')">π</button>
+                    
+                    <button class="number" aria-label="Add 7" onclick="appendToDisplay('7')">7</button>
+                    <button class="number" aria-label="Add 8" onclick="appendToDisplay('8')">8</button>
+                    <button class="number" aria-label="Add 9" onclick="appendToDisplay('9')">9</button>
+                    <button class="operator" aria-label="Divide" onclick="appendToDisplay('/')">/</button>
+                    <button class="function" onclick="appendToDisplay('sqrt(')">√</button>
+                    
+                    <button class="number" aria-label="Add 4" onclick="appendToDisplay('4')">4</button>
+                    <button class="number" aria-label="Add 5" onclick="appendToDisplay('5')">5</button>
+                    <button class="number" aria-label="Add 6" onclick="appendToDisplay('6')">6</button>
+                    <button class="operator" aria-label="Multiply" onclick="appendToDisplay('*')">×</button>
+                    <button class="function" aria-label="Natural Logarithm" onclick="appendToDisplay('ln(')">ln</button>
+                    
+                    <button class="number" aria-label="Add 1" onclick="appendToDisplay('1')">1</button>
+                    <button class="number" aria-label="Add 2" onclick="appendToDisplay('2')">2</button>
+                    <button class="number" aria-label="Add 3" onclick="appendToDisplay('3')">3</button>
+                    <button class="operator" aria-label="Subtract" onclick="appendToDisplay('-')">-</button>
+                    <button class="function" aria-label="Tangent" onclick="appendToDisplay('tan(')">tan</button>
+                    
+                    <button class="number" aria-label="Add 0" onclick="appendToDisplay('0')">0</button>
+                    <button class="number" aria-label="Add Decimal" onclick="appendToDisplay('.')">.</button>
+                    <button class="equal" aria-label="Calculate" onclick="calculate()">=</button>
+                    <button class="operator" aria-label="Add" onclick="appendToDisplay('+')">+</button>
+                    <button class="function" aria-label="Factorial" onclick="appendToDisplay('factorial(')">!</button>
+
+                    <button class="function" aria-label="Sine" onclick="appendToDisplay('sin(')">sin</button>
+                    <button class="function" aria-label="Cosine" onclick="appendToDisplay('cos(')">cos</button>
+                    <button class="function" aria-label="Logarithm" onclick="appendToDisplay('log(')">log</button>
+                    <button class="function" aria-label="Power" onclick="appendToDisplay('^')">^</button>
+                    <button class="function" aria-label="Exponential" onclick="appendToDisplay('exp(')">exp</button>
+                </div>
+            </div>
+            <div class="graph-container">
+                <div id="coefficients">
+                    <input type="number" id="a" placeholder="a" value="0">
+                    <input type="number" id="b" placeholder="b" value="0">
+                    <input type="number" id="c" placeholder="c" value="0">
+                </div>
+                <button class="function" style="width: 100%; margin-bottom: 15px; border-radius: 15px;" onclick="draw2ndDegreeGraph()">Draw 2nd Degree Graph</button>
+                <div id="graphContainer">
+                    <canvas id="graphCanvas"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let chart;
+        const display = document.getElementById('display');
+        const historyDisplay = document.getElementById('historyDisplay');
+        let history = [];
+        let lastOperation = '';
+
+        function appendToDisplay(value) {
+            if (lastOperation === '=' || display.innerHTML === '0') {
+                display.innerHTML = value === '.' ? '0.' : value;
+                lastOperation = '';
+            } else {
+                display.innerHTML += value;
+            }
+        }
+
+        function clearAll() {
+            display.innerHTML = '0';
+            lastOperation = '';
+            history = [];
+            updateHistoryDisplay();
+        }
+
+        function deleteLastChar() {
+            if (display.innerHTML === 'Error' || display.innerHTML === 'ln(' || display.innerHTML === 'cos(' || display.innerHTML === 'sin(' || display.innerHTML === 'tan(' || display.innerHTML === 'log(' || display.innerHTML === 'exp(') {
+               display.innerHTML = '0';
+            }else if (display.innerHTML.length > 1) {
+                display.innerHTML = display.innerHTML.slice(0, -1);
+            } else {
+                display.innerHTML = '0';
+            }
+        
+            lastOperation = '';
+        }
+
+        function calculate() {
+            try {
+                const result = math.evaluate(display.innerHTML);
+                history.push(`${display.innerHTML} = ${result}`);
+                updateHistoryDisplay();
+                display.innerHTML = result;
+                lastOperation = '=';
+            } catch (error) {
+                display.innerHTML = 'Error';
+            }
+        }
+
+        function updateHistoryDisplay() {
+            historyDisplay.innerHTML = history.slice(-7).join('<br>');
+        }
+
+        function draw2ndDegreeGraph() {
+            const a = parseFloat(document.getElementById('a').value);
+            const b = parseFloat(document.getElementById('b').value);
+            const c = parseFloat(document.getElementById('c').value);
+
+            const xValues = [];
+            const yValues = [];
+
+            for (let x = -10; x <= 10; x += 0.5) {
+                xValues.push(x);
+                yValues.push(a * x * x + b * x + c);
+            }
+
+            if (chart) {
+                chart.destroy();
+            }
+
+            const ctx = document.getElementById('graphCanvas').getContext('2d');
+            chart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: xValues,
+                    datasets: [{
+                        label: `f(x) = ${a}x² + ${b}x + ${c}`,
+                        data: yValues,
+                        borderColor: 'rgb(72, 187, 120)',
+                        backgroundColor: 'rgba(72, 187, 120, 0.1)',
+                        tension: 0.1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        x: {
+                            type: 'linear',
+                            position: 'center',
+                            grid: {
+                                color: 'rgba(255, 255, 255, 0.1)'
+                            },
+                            ticks: {
+                                color: '#a0aec0'
+                            }
+                        },
+                        y: {
+                            type: 'linear',
+                            position: 'center',
+                            grid: {
+                                color: 'rgba(255, 255, 255, 0.1)'
+                            },
+                            ticks: {
+                                color: '#a0aec0'
+                            }
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            labels: {
+                                color: '#e2e8f0'
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        document.addEventListener('keydown', (event) => {
+            const key = event.key;
+            if ('0123456789+-*/.()'.includes(key)) {
+                appendToDisplay(key);
+            } else if (key === 'Enter') {
+                calculate();
+            } else if (key === 'Backspace') {
+                deleteLastChar();
+            } else if (key.toLowerCase() === 'c') {
+                clearAll();
+            }
+        });
+    </script>
+</body>
+</html>
